@@ -71,6 +71,36 @@ class ConfigDirTest(unittest.TestCase):
                          utils.depot_tools_config_dir())
 
 
+class CacheDirTest(unittest.TestCase):
+
+    @mock.patch('sys.platform', 'win32')
+    @mock.patch.dict('os.environ', {'LOCALAPPDATA': 'C:\\Users\\me\\Local'},
+                     clear=True)
+    def testWin(self):
+        self.assertEqual(os.path.join('C:\\Users\\me\\Local', 'depot_tools'),
+                         utils.depot_tools_cache_dir())
+
+    @mock.patch('sys.platform', 'darwin')
+    @mock.patch.dict('os.environ', {}, clear=True)
+    def testMac(self):
+        self.assertEqual(
+            os.path.join(os.path.expanduser('~/Library/Caches'),
+                         'depot_tools'), utils.depot_tools_cache_dir())
+
+    @mock.patch('sys.platform', 'linux')
+    @mock.patch.dict('os.environ', {}, clear=True)
+    def testLinuxDefault(self):
+        self.assertEqual(
+            os.path.join(os.path.expanduser('~/.cache'), 'depot_tools'),
+            utils.depot_tools_cache_dir())
+
+    @mock.patch('sys.platform', 'linux')
+    @mock.patch.dict('os.environ', {'XDG_CACHE_HOME': '/my/cache'}, clear=True)
+    def testLinuxCustom(self):
+        self.assertEqual(os.path.join('/my/cache', 'depot_tools'),
+                         utils.depot_tools_cache_dir())
+
+
 class ConfigPathTest(unittest.TestCase):
 
     def setUp(self):

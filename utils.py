@@ -56,6 +56,26 @@ def depot_tools_config_path(file):
     return expected_path
 
 
+def depot_tools_cache_dir():
+    """Returns the per-user cache directory for depot_tools.
+
+    Unlike depot_tools_config_dir(), this never points inside the depot_tools
+    install directory: caches (e.g. git mirrors, virtualenvs) can grow to many
+    GB and are regenerable, so they belong in the platform's user cache area
+    alongside vpython's own `~/.cache/vpython-root.<uid>`.
+    """
+    if sys.platform == 'win32':
+        # %LOCALAPPDATA%, e.g. C:\Users\<user>\AppData\Local.
+        cache_root = os.getenv('LOCALAPPDATA',
+                               os.path.expanduser('~\\AppData\\Local'))
+    elif sys.platform == 'darwin':
+        cache_root = os.path.expanduser('~/Library/Caches')
+    else:
+        # $XDG_CACHE_HOME/depot_tools or $HOME/.cache/depot_tools on linux.
+        cache_root = os.getenv('XDG_CACHE_HOME', os.path.expanduser('~/.cache'))
+    return os.path.join(cache_root, 'depot_tools')
+
+
 def find_config_file(path, config_filename, top_dir=None):
     """Recursively finds a configuration file in parent directories."""
     current_path = os.path.abspath(path)
