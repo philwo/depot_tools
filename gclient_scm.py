@@ -183,12 +183,27 @@ class SCMWrapper(object):
         force: bool; if True, delete the directory. Otherwise, just move it.
     """
         checkout_path = os.path.normpath(self.checkout_path)
+        is_root = checkout_path == os.path.normpath(self._root_dir)
         if force and os.environ.get('CHROME_HEADLESS') == '1':
             self.Print('_____ Conflicting directory found in %s. Removing.' %
                        checkout_path)
             gclient_utils.AddWarning('Conflicting directory %s deleted.' %
                                      checkout_path)
             gclient_utils.rmtree(checkout_path)
+        elif is_root and not force:
+            # `checkout_path` is the gclient root itself (a solution whose name
+            # is "."). Moving it out of the way means relocating every entry in
+            # the directory into the _bad_scm quarantine dir, which for a
+            # directory that is not an empty/clean checkout (e.g. `fetch infra`
+            # run in a populated home directory) silently sweeps away all of the
+            # user's files. Refuse to do that automatically to avoid data loss.
+            raise gclient_utils.Error(
+                'Refusing to move the entire contents of %s out of the way.\n'
+                'This directory is the gclient root and is not an empty or '
+                'clean checkout, so\nmoving it would relocate all of your files '
+                'into a _bad_scm quarantine\ndirectory and risk data loss.\n'
+                'Move or remove its contents yourself, or re-run with --force.'
+                % checkout_path)
         else:
             bad_scm_dir_name = '_bad_scm'
             relpath = os.path.normpath(self.relpath)
@@ -215,7 +230,7 @@ class SCMWrapper(object):
             # entire root directory into itself (i.e. into `bad_scm_dir`).
             # Instead, we move its contents individually, skipping the
             # quarantine directory.
-            if checkout_path == os.path.normpath(self._root_dir):
+            if is_root:
                 for f in os.listdir(checkout_path):
                     if f == bad_scm_dir_name:
                         continue

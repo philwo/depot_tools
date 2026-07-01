@@ -322,6 +322,26 @@ def run(options, spec, root):
             'Fetch also does not yet deal with partial checkouts, so if fetch')
         print('failed, delete the checkout and start over (crbug.com/230691).')
         return 1
+
+    # Some configs (e.g. infra) check out directly into the current directory
+    # rather than a subdirectory. If the current directory is not empty, the
+    # gclient checkout would move all existing files out of the way into a
+    # _bad_scm quarantine directory, which can silently wipe an unrelated
+    # directory (e.g. running "fetch infra" in a home directory). Refuse to
+    # proceed in that case.
+    if not options.force and os.path.normpath(
+            root or '.') == '.' and os.listdir(os.getcwd()):
+        print('Your current directory is not empty, and "fetch %s" checks out '
+              'into the' % options.config)
+        print('current directory rather than a subdirectory. Refusing to '
+              'proceed to avoid')
+        print('moving your existing files out of the way and risking data '
+              'loss.')
+        print()
+        print('Please run "fetch %s" in a new, empty directory instead.' %
+              options.config)
+        return 1
+
     return checkout.init()
 
 

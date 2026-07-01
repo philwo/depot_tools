@@ -315,6 +315,48 @@ class TestRunGitCache(unittest.TestCase):
         self.assertNotIn('cache_dir', spec)
 
 
+class TestRunEmptyDirCheck(unittest.TestCase):
+    """Tests for the non-empty-cwd guard in fetch.run() for '.'-root configs."""
+
+    def setUp(self):
+        mock.patch('sys.stdout', StringIO()).start()
+        mock.patch('gclient_utils.IsEnvCog', return_value=False).start()
+        self.factory = mock.patch('fetch.CheckoutFactory').start()
+        self.factory.return_value.exists.return_value = False
+        self.factory.return_value.init.return_value = 0
+        mock.patch('os.getcwd', return_value='/some/dir').start()
+        self.listdir = mock.patch('os.listdir').start()
+        self.addCleanup(mock.patch.stopall)
+
+    def _run(self, root, force=False):
+        spec = {'type': 'gclient_git', 'gclient_git_spec': {'solutions': []}}
+        opts = argparse.Namespace(git_cache=False,
+                                  protocol_override=None,
+                                  force=force,
+                                  config='infra')
+        return fetch.run(opts, spec, root)
+
+    def test_root_is_cwd_and_not_empty_aborts(self):
+        self.listdir.return_value = ['some_file']
+        self.assertEqual(1, self._run('.'))
+        self.factory.return_value.init.assert_not_called()
+
+    def test_root_is_cwd_and_empty_proceeds(self):
+        self.listdir.return_value = []
+        self.assertEqual(0, self._run('.'))
+        self.factory.return_value.init.assert_called_once()
+
+    def test_root_is_subdir_and_not_empty_proceeds(self):
+        self.listdir.return_value = ['some_file']
+        self.assertEqual(0, self._run('src'))
+        self.factory.return_value.init.assert_called_once()
+
+    def test_force_bypasses_check(self):
+        self.listdir.return_value = ['some_file']
+        self.assertEqual(0, self._run('.', force=True))
+        self.factory.return_value.init.assert_called_once()
+
+
 if __name__ == '__main__':
     logging.basicConfig(
         level=logging.DEBUG if '-v' in sys.argv else logging.ERROR)
