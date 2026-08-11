@@ -74,6 +74,9 @@ file.
 disable auto update, set the environment variable `DEPOT_TOOLS_UPDATE=0` or
 run `./update_depot_tools_toggle.py --disable`.
 
+The update fetches `origin/main` and rebases the current checkout onto it. If
+the rebase fails, the update aborts the rebase and exits with an error.
+
 To update package manually, run `update_depot_tools.bat` on Windows,
 or `./update_depot_tools` on Linux or Mac.
 

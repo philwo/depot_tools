@@ -59,11 +59,14 @@ IF NOT EXIST "%DEPOT_TOOLS_DIR%.git" (
 
 cd /d "%DEPOT_TOOLS_DIR%."
 call git fetch -q origin > NUL
-call git checkout -q origin/main > NUL
-if errorlevel 1 (
-  echo Failed to update depot_tools.
-  exit /b %ERRORLEVEL%
-)
+call git rebase -q origin/main > NUL
+if not errorlevel 1 goto :GIT_UPDATE_DONE
+set UPDATE_RESULT=%ERRORLEVEL%
+echo Failed to update depot_tools.
+call git rebase --abort > NUL 2>&1
+exit /b %UPDATE_RESULT%
+
+:GIT_UPDATE_DONE
 
 :: Sync CIPD and CIPD client tools.
 call "%~dp0\cipd_bin_setup.bat"

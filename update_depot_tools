@@ -85,11 +85,12 @@ function update_git_repo {
     echo "Retry later or reclone depot_tools" >&2
     echo "$GIT_CMD_TXT" >&2
   else
-    GIT_CMD_TXT=$(git checkout -q origin/main 2>&1)
+    GIT_CMD_TXT=$(git rebase -q origin/main 2>&1)
     STATUS=$?
     if [[ $STATUS -ne 0 ]]; then
       echo "depot_tools update failed. Conflict in $base_dir" >&2
       echo "$GIT_CMD_TXT" >&2
+      git rebase --abort 2> /dev/null
     fi
   fi
   # Having python3 on depot_tools causes problems if users put depot_tools in
