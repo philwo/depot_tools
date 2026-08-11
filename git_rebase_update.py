@@ -128,6 +128,8 @@ def remove_empty_branches(branch_tree, worktree_branches):
     for branch, parent in git.topo_iter(branch_tree, top_down=False):
         if git.is_dormant(branch):
             continue
+        if branch == "main":
+            continue
 
         downstreams[parent].append(branch)
         branch_tree_hash = tree_hashes[branch]
@@ -410,14 +412,21 @@ def main(args=None):
         help="Do not automatically delete empty branches.",
     )
     parser.add_argument(
-        "--no-squash",
-        action="store_true",
-        help="Will not try to squash branches if rebasing fails.",
+        "--squash",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Try to squash branches if rebasing fails. Disabled by default.",
     )
     parser.add_argument(
+        "--skip-worktree",
         "--skip-worktrees",
-        action="store_true",
-        help="Skip branches checked out in a different worktree.",
+        action=argparse.BooleanOptionalAction,
+        dest="skip_worktrees",
+        default=True,
+        help=(
+            "Skip branches checked out in a different worktree. Enabled by "
+            "default."
+        ),
     )
 
     opts = parser.parse_args(args)
@@ -503,7 +512,7 @@ def main(args=None):
                 branch,
                 parent,
                 merge_base[branch],
-                opts.no_squash,
+                not opts.squash,
                 branches_in_other_worktrees,
             )
             if not ret:

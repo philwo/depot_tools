@@ -2,12 +2,12 @@
 .\"     Title: git-rebase-update
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 06/15/2026
+.\"      Date: 08/11/2026
 .\"    Manual: Chromium depot_tools Manual
-.\"    Source: depot_tools b26951427
+.\"    Source: depot_tools 1709e20d5
 .\"  Language: English
 .\"
-.TH "GIT\-REBASE\-UPDATE" "1" "06/15/2026" "depot_tools b26951427" "Chromium depot_tools Manual"
+.TH "GIT\-REBASE\-UPDATE" "1" "08/11/2026" "depot_tools 1709e20d5" "Chromium depot_tools Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -32,7 +32,7 @@ git-rebase-update \- Updates all branches to have the latest changes from their 
 .SH "SYNOPSIS"
 .sp
 .nf
-\fIgit rebase\-update\fR [\-v | \-\-verbose] [\-n | \-\-no\-fetch] [\-k | \-\-keep\-going] [\-\-no\-squash]
+\fIgit rebase\-update\fR [\-v | \-\-verbose] [\-n | \-\-no\-fetch] [\-k | \-\-keep\-going] [\-\-squash]
 .fi
 .sp
 .SH "DESCRIPTION"
@@ -70,16 +70,13 @@ All branches are rebased in topological order from roots (upstreams) to leaves\&
 (see
 \fBgit-freeze\fR(1)), the branch will be rebased onto the last non\-freeze commit on the parent branch\&.
 .sp
-Things get interesting when there are merge conflicts on rebase\&. The
-\fBmost common\fR
-cause for conflicts is when your branch has been committed to the upstream in squashed form, ala
-\fBgit-squash-branch\fR(1), which is what
+Things get interesting when there are merge conflicts on rebase\&. Pass
+\fB\-\-squash\fR
+to try squashing a conflicted branch and applying the result to its upstream\&. This can detect a branch that was committed upstream in squashed form, as
 \fBgit-cl\fR(1)
 and the
 \fICommit Queue\fR
-will do\&. Because of that,
-\fBgit rebase\-update\fR
-will attempt to squash your conflicted branch to see if the squashed version applies cleanly to its upstream\&.
+will do\&.
 .sp
 If it does not apply cleanly, then your original (non\-squashed) branch will be left in mid\-rebase and
 \fBgit rebase\-update\fR
@@ -92,7 +89,9 @@ If you\(cqd like to rebase all rebaseable branches in one pass and manually proc
 .PP
 Cleanup
 .RS 4
-Once all the branches have been rebased, any empty branches (i\&.e\&. branches with no commits on them) are removed\&. If a branch is removed in this fashion, any branches which depend on it are reparented to the parent of the removed branch (see
+Once all the branches have been rebased, any empty branches (i\&.e\&. branches with no commits on them) other than
+\fBmain\fR
+are removed\&. If a branch is removed in this fashion, any branches which depend on it are reparented to the parent of the removed branch (see
 \fBgit-reparent-branch\fR(1))\&.
 .RE
 .PP
@@ -125,9 +124,31 @@ Skip the
 phase of rebase\-update\&.
 .RE
 .PP
+\-\-squash
+.RS 4
+Try to squash a branch if rebasing fails\&. This is disabled by default\&.
+.RE
+.PP
 \-\-no\-squash
 .RS 4
-Skip the squash phase of rebase\-update if there are merge conflicts\&.
+Do not try to squash a branch if rebasing fails\&. This is the default\&.
+.RE
+.PP
+\-e, \-\-keep\-empty
+.RS 4
+Keep all empty branches\&. Without this option, empty branches other than
+\fBmain\fR
+are removed\&.
+.RE
+.PP
+\-\-skip\-worktree
+.RS 4
+Skip branches checked out in another worktree\&. This is the default\&.
+.RE
+.PP
+\-\-no\-skip\-worktree
+.RS 4
+Process branches checked out in other worktrees\&.
 .RE
 .PP
 \-v, \-\-verbose

@@ -200,7 +200,7 @@ class GitRebaseUpdateTest(git_test_utils.GitRepoReadWriteTestBase):
 
         self.repo.git("checkout", "sub_K")
         output, _ = self.repo.capture_stdio(self.rp.main, ["foobar"])
-        self.assertIn("Squashing failed", output)
+        self.assertIn("Your working copy is in mid-rebase", output)
 
         self.assertTrue(self.repo.run(self.gc.in_rebase))
 
@@ -308,15 +308,20 @@ class GitRebaseUpdateTest(git_test_utils.GitRepoReadWriteTestBase):
         self.repo.git("checkout", "branch_G")
 
         output, _ = self.repo.capture_stdio(self.reup.main, [])
+        self.assertNotIn("Failed! Attempting to squash", output)
         self.assertIn("branch.branch_K.dormant true", output)
 
-        output, _ = self.repo.capture_stdio(self.reup.main, [])
+        self.repo.git("rebase", "--abort")
+        output, _ = self.repo.capture_stdio(self.reup.main, ["--squash"])
+        self.assertIn("Failed! Attempting to squash", output)
+
+        output, _ = self.repo.capture_stdio(self.reup.main, ["--squash"])
         self.assertIn("Rebase in progress", output)
 
         self.repo.git("checkout", "--theirs", "M")
         self.repo.git("rebase", "--skip")
 
-        output, _ = self.repo.capture_stdio(self.reup.main, [])
+        output, _ = self.repo.capture_stdio(self.reup.main, ["--squash"])
         self.assertIn("Failed! Attempting to squash", output)
         self.assertIn("Deleted branch branch_G", output)
         self.assertIn("Deleted branch branch_L", output)
@@ -386,9 +391,7 @@ branch refs/heads/empty_branch_in_worktree
             return original_run(*args, **kwargs)
 
         with mock.patch("git_common.run", side_effect=mock_run):
-            output, _ = self.repo.capture_stdio(
-                self.reup.main, ["--skip-worktrees"]
-            )
+            output, _ = self.repo.capture_stdio(self.reup.main)
 
         self.assertIn(
             "Skipping branch checked out in another worktree branch_L", output
@@ -400,6 +403,25 @@ branch refs/heads/empty_branch_in_worktree
             "Skipping deletion of branch checked out in another worktree empty_branch_in_worktree",
             output,
         )
+
+    def testRebaseUpdateKeepsMainWhenEmpty(self):
+        self.repo.git("checkout", "branch_K")
+        self.repo.git("branch", "-f", "main", "origin/main")
+        self.repo.git("branch", "empty_branch", "origin/main")
+        self.repo.git("branch", "--set-upstream-to", "origin/main", "main")
+        self.repo.git(
+            "branch", "--set-upstream-to", "origin/main", "empty_branch"
+        )
+
+        self.repo.run(
+            self.reup.remove_empty_branches,
+            {"main": "origin/main", "empty_branch": "origin/main"},
+            set(),
+        )
+
+        branches = self.repo.run(set, self.gc.branches())
+        self.assertIn("main", branches)
+        self.assertNotIn("empty_branch", branches)
 
     def testTrackTag(self):
         self.origin.git("tag", "tag-to-track", self.origin["M"])

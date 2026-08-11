@@ -756,7 +756,7 @@ git-rebase-update(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git rebase-update</em> [-v | --verbose] [-n | --no-fetch] [-k | --keep-going] [--no-squash]</pre>
+<pre class="content"><em>git rebase-update</em> [-v | --verbose] [-n | --no-fetch] [-k | --keep-going] [--squash]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -800,12 +800,10 @@ Rebasing
   branch is <em>frozen</em> (see <a href="git-freeze.html">git-freeze(1)</a>), the branch will be rebased
   onto the last non-freeze commit on the parent branch.
 </p>
-<div class="paragraph"><p>Things get interesting when there are merge conflicts on rebase. The <strong>most
-common</strong> cause for conflicts is when your branch has been committed to the
-upstream in squashed form, ala <a href="git-squash-branch.html">git-squash-branch(1)</a>, which is what
-<a href="git-cl.html">git-cl(1)</a> and the <em>Commit Queue</em> will do. Because of that, <code>git
-rebase-update</code> will attempt to squash your conflicted branch to see if the
-squashed version applies cleanly to its upstream.</p></div>
+<div class="paragraph"><p>Things get interesting when there are merge conflicts on rebase. Pass
+<code>--squash</code> to try squashing a conflicted branch and applying the result to its
+upstream. This can detect a branch that was committed upstream in squashed form,
+as <a href="git-cl.html">git-cl(1)</a> and the <em>Commit Queue</em> will do.</p></div>
 <div class="paragraph"><p>If it does not apply cleanly, then your original (non-squashed) branch will be
 left in mid-rebase and <code>git rebase-update</code> will exit. You can deal with this
 like any other conflicted rebase. When you&#8217;re done, just <code>git rebase-update</code>
@@ -822,9 +820,9 @@ Cleanup
 <dd>
 <p>
   Once all the branches have been rebased, any empty branches (i.e. branches
-  with no commits on them) are removed. If a branch is removed in this fashion,
-  any branches which depend on it are reparented to the parent of the removed
-  branch (see <a href="git-reparent-branch.html">git-reparent-branch(1)</a>).
+  with no commits on them) other than <code>main</code> are removed. If a branch is removed
+  in this fashion, any branches which depend on it are reparented to the parent
+  of the removed branch (see <a href="git-reparent-branch.html">git-reparent-branch(1)</a>).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -869,11 +867,47 @@ Restoration
 </p>
 </dd>
 <dt class="hdlist1">
+--squash
+</dt>
+<dd>
+<p>
+  Try to squash a branch if rebasing fails. This is disabled by default.
+</p>
+</dd>
+<dt class="hdlist1">
 --no-squash
 </dt>
 <dd>
 <p>
-  Skip the squash phase of rebase-update if there are merge conflicts.
+  Do not try to squash a branch if rebasing fails. This is the default.
+</p>
+</dd>
+<dt class="hdlist1">
+-e
+</dt>
+<dt class="hdlist1">
+--keep-empty
+</dt>
+<dd>
+<p>
+  Keep all empty branches. Without this option, empty branches other than <code>main</code>
+  are removed.
+</p>
+</dd>
+<dt class="hdlist1">
+--skip-worktree
+</dt>
+<dd>
+<p>
+  Skip branches checked out in another worktree. This is the default.
+</p>
+</dd>
+<dt class="hdlist1">
+--no-skip-worktree
+</dt>
+<dd>
+<p>
+  Process branches checked out in other worktrees.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -973,7 +1007,7 @@ by checking out the <a href="https://chromium.googlesource.com/chromium/tools/de
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2026-06-15 06:32:09 UTC
+ 2026-08-11 09:34:56 JST
 </div>
 </div>
 </body>
