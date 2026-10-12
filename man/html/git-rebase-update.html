@@ -829,9 +829,10 @@ Cleanup
 <dd>
 <p>
   Once all the branches have been rebased, any empty branches (i.e. branches
-  with no commits on them) are removed. If a branch is removed in this fashion,
-  any branches which depend on it are reparented to the parent of the removed
-  branch (see <a href="git-reparent-branch.html">git-reparent-branch(1)</a>).
+  with no commits on them) are removed, except for the local copy of the root
+  branch (such as <code>master</code> for <code>origin/master</code>). If a branch is removed in this
+  fashion, any branches which depend on it are reparented to the parent of the
+  removed branch (see <a href="git-reparent-branch.html">git-reparent-branch(1)</a>).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -893,6 +894,34 @@ Restoration
 <p>
   Do not check whether a branch&#8217;s commits already landed upstream in squashed
   form.
+</p>
+</dd>
+<dt class="hdlist1">
+-e
+</dt>
+<dt class="hdlist1">
+--keep-empty
+</dt>
+<dd>
+<p>
+  Keep all empty branches. Without this option, empty branches other than the
+  local copy of the root branch are removed.
+</p>
+</dd>
+<dt class="hdlist1">
+--skip-worktree
+</dt>
+<dd>
+<p>
+  Skip branches checked out in another worktree. This is the default.
+</p>
+</dd>
+<dt class="hdlist1">
+--no-skip-worktree
+</dt>
+<dd>
+<p>
+  Process branches checked out in other worktrees.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1008,7 +1037,7 @@ by checking out the <a href="https://chromium.googlesource.com/chromium/tools/de
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2026-10-08 15:21:09 EDT
+ 2026-10-12 22:18:42 JST
 </div>
 </div>
 </body>

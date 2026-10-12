@@ -110,9 +110,29 @@ def fetch_remotes(branch_tree):
     )
 
 
+def root_branch_name():
+    """Returns the name of the local branch that mirrors the root upstream.
+
+    For a root of "origin/master" this is "master". The remote prefix is
+    matched against the configured remotes, because remote names may contain
+    slashes. A root that is not under any remote is returned unchanged.
+    """
+    root = git.root().removeprefix("refs/remotes/")
+    remotes = git.run("remote").splitlines()
+    # Prefer the longest match in case one remote name prefixes another.
+    for remote in sorted(remotes, key=len, reverse=True):
+        if root.startswith(remote + "/"):
+            return root[len(remote) + 1 :]
+    return root
+
+
 def remove_empty_branches(branch_tree, worktree_branches):
     tag_set = git.tags()
     ensure_root_checkout = git.once(lambda: git.run("checkout", git.root()))
+
+    # Keep the local copy of the root (such as master for origin/master) even
+    # when it has no commits of its own: it is the base that branches track.
+    root_branch = root_branch_name()
 
     # Resolve tree SHAs for all branches and parents to check for empty diffs.
     all_refs = list(set(branch_tree.keys()).union(branch_tree.values()))
@@ -127,6 +147,8 @@ def remove_empty_branches(branch_tree, worktree_branches):
     downstreams = collections.defaultdict(list)
     for branch, parent in git.topo_iter(branch_tree, top_down=False):
         if git.is_dormant(branch):
+            continue
+        if branch == root_branch:
             continue
 
         downstreams[parent].append(branch)
@@ -471,9 +493,15 @@ def main(args=None):
         "in squashed form.",
     )
     parser.add_argument(
+        "--skip-worktree",
         "--skip-worktrees",
-        action="store_true",
-        help="Skip branches checked out in a different worktree.",
+        action=argparse.BooleanOptionalAction,
+        dest="skip_worktrees",
+        default=True,
+        help=(
+            "Skip branches checked out in a different worktree. Enabled by "
+            "default."
+        ),
     )
 
     opts = parser.parse_args(args)

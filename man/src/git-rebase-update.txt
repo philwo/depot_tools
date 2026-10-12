@@ -63,9 +63,10 @@ until all branches apply cleanly.
 
 Cleanup::
   Once all the branches have been rebased, any empty branches (i.e. branches
-  with no commits on them) are removed. If a branch is removed in this fashion,
-  any branches which depend on it are reparented to the parent of the removed
-  branch (see linkgit:git-reparent-branch[1]).
+  with no commits on them) are removed, except for the local copy of the root
+  branch (such as `master` for `origin/master`). If a branch is removed in this
+  fashion, any branches which depend on it are reparented to the parent of the
+  removed branch (see linkgit:git-reparent-branch[1]).
 
 Restoration::
   `git rebase-update` checks out the branch that you started on, and 'thaws' it,
@@ -93,6 +94,17 @@ OPTIONS
 --no-squash::
   Do not check whether a branch's commits already landed upstream in squashed
   form.
+
+-e::
+--keep-empty::
+  Keep all empty branches. Without this option, empty branches other than the
+  local copy of the root branch are removed.
+
+--skip-worktree::
+  Skip branches checked out in another worktree. This is the default.
+
+--no-skip-worktree::
+  Process branches checked out in other worktrees.
 
 -v::
 --verbose::

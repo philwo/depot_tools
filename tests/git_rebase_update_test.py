@@ -394,7 +394,9 @@ class GitRebaseUpdateTest(git_test_utils.GitRepoReadWriteTestBase):
         self.repo.git("worktree", "add", worktree, "cl_1")
         unrelated = self.repo.git("rev-parse", "unrelated").stdout.strip()
 
-        output, _ = self.repo.capture_stdio(self.reup.main, [])
+        output, _ = self.repo.capture_stdio(
+            self.reup.main, ["--no-skip-worktree"]
+        )
 
         self.assertIn("Failed to rebase cl_1:", output)
         self.assertIn("already used by worktree", output)
@@ -596,9 +598,7 @@ branch refs/heads/empty_branch_in_worktree
             return original_run(*args, **kwargs)
 
         with mock.patch("git_common.run", side_effect=mock_run):
-            output, _ = self.repo.capture_stdio(
-                self.reup.main, ["--skip-worktrees"]
-            )
+            output, _ = self.repo.capture_stdio(self.reup.main)
 
         self.assertIn(
             "Skipping branch checked out in another worktree branch_L", output
@@ -610,6 +610,58 @@ branch refs/heads/empty_branch_in_worktree
             "Skipping deletion of branch checked out in another worktree empty_branch_in_worktree",
             output,
         )
+
+    def testRebaseUpdateKeepsMainWhenEmpty(self):
+        self.repo.git("checkout", "branch_K")
+        self.repo.git("branch", "-f", "main", "origin/main")
+        self.repo.git("branch", "empty_branch", "origin/main")
+        self.repo.git("branch", "--set-upstream-to", "origin/main", "main")
+        self.repo.git(
+            "branch", "--set-upstream-to", "origin/main", "empty_branch"
+        )
+
+        self.repo.run(
+            self.reup.remove_empty_branches,
+            {"main": "origin/main", "empty_branch": "origin/main"},
+            set(),
+        )
+
+        branches = self.repo.run(set, self.gc.branches())
+        self.assertIn("main", branches)
+        self.assertNotIn("empty_branch", branches)
+
+    def testRebaseUpdateKeepsRootBranchWhenEmpty(self):
+        """An empty local copy of a non-main root, such as master, is kept."""
+        self.repo.git("update-ref", "refs/remotes/origin/master", "tag_E")
+        self.repo.run(
+            self.gc.set_config, "depot-tools.upstream", "origin/master"
+        )
+        self.repo.git("checkout", "branch_K")
+        self.repo.git("branch", "master", "origin/master")
+        self.repo.git("branch", "empty_branch", "origin/master")
+        self.repo.git("branch", "--set-upstream-to", "origin/master", "master")
+        self.repo.git(
+            "branch", "--set-upstream-to", "origin/master", "empty_branch"
+        )
+
+        self.repo.run(
+            self.reup.remove_empty_branches,
+            {"master": "origin/master", "empty_branch": "origin/master"},
+            set(),
+        )
+
+        branches = self.repo.run(set, self.gc.branches())
+        self.assertIn("master", branches)
+        self.assertNotIn("empty_branch", branches)
+
+    def testRootBranchNameStripsRemoteContainingSlash(self):
+        """The remote prefix is matched against remotes, not the first slash."""
+        self.repo.git("remote", "add", "team/fork", self.origin.repo_path)
+        self.repo.run(
+            self.gc.set_config, "depot-tools.upstream", "team/fork/main"
+        )
+
+        self.assertEqual("main", self.repo.run(self.reup.root_branch_name))
 
     def testTrackTag(self):
         self.origin.git("tag", "tag-to-track", self.origin["M"])
