@@ -2,12 +2,12 @@
 .\"     Title: git-rebase-update
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 10/08/2026
+.\"      Date: 10/12/2026
 .\"    Manual: Chromium depot_tools Manual
-.\"    Source: depot_tools 2103662cf
+.\"    Source: depot_tools 63164a2b5
 .\"  Language: English
 .\"
-.TH "GIT\-REBASE\-UPDATE" "1" "10/08/2026" "depot_tools 2103662cf" "Chromium depot_tools Manual"
+.TH "GIT\-REBASE\-UPDATE" "1" "10/12/2026" "depot_tools 63164a2b5" "Chromium depot_tools Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -100,7 +100,10 @@ If you\(cqd like to rebase all rebaseable branches in one pass and manually proc
 .PP
 Cleanup
 .RS 4
-Once all the branches have been rebased, any empty branches (i\&.e\&. branches with no commits on them) are removed\&. If a branch is removed in this fashion, any branches which depend on it are reparented to the parent of the removed branch (see
+Once all the branches have been rebased, any empty branches (i\&.e\&. branches with no commits on them) are removed, except for the local copy of the root branch (such as
+\fBmaster\fR
+for
+\fBorigin/master\fR)\&. If a branch is removed in this fashion, any branches which depend on it are reparented to the parent of the removed branch (see
 \fBgit-reparent-branch\fR(1))\&.
 .RE
 .PP
@@ -141,6 +144,21 @@ Do not automatically delete empty branches\&.
 \-\-no\-squash
 .RS 4
 Do not check whether a branch\(cqs commits already landed upstream in squashed form\&.
+.RE
+.PP
+\-e, \-\-keep\-empty
+.RS 4
+Keep all empty branches\&. Without this option, empty branches other than the local copy of the root branch are removed\&.
+.RE
+.PP
+\-\-skip\-worktree
+.RS 4
+Skip branches checked out in another worktree\&. This is the default\&.
+.RE
+.PP
+\-\-no\-skip\-worktree
+.RS 4
+Process branches checked out in other worktrees\&.
 .RE
 .PP
 \-v, \-\-verbose
