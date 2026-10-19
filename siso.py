@@ -666,27 +666,6 @@ def main(
                         should_print_flags = True
                     subcmd_args = sub_flags + subcmd_args
 
-                    # fast_nop, fast_local, fast_last_failure, fast_exit are set
-                    # to false when stdout is not a TTY (see
-                    # subcmd/ninja/config.go). This makes no-op and small builds
-                    # slower. --batch=false re-enables all four flags so non-TTY
-                    # AI agents get the same performance as interactive
-                    # terminals. --quiet reduces context pollution.
-                    if subcmd == "ninja" and detected_env_vars:
-                        # Verbose printing the logic here to reduce
-                        # hallucinations on slow/failed builds.
-                        print(
-                            f"Detected AI agent env ({', '.join(detected_env_vars)}). Prepending"
-                            " --quiet --batch=false --heartbeat_period=30s"
-                            " to improve latency and reduce context pollution."
-                            " User-supplied flags take precedence."
-                        )
-                        subcmd_args = [
-                            "--quiet",
-                            "--batch=false",
-                            "--heartbeat_period=30s",
-                        ] + subcmd_args
-
                     # Add ninja specific flags.
                     should_collect_logs = all(
                         (
@@ -715,17 +694,7 @@ def main(
                         file=sys.stderr,
                     )
                 check_outdir(out_dir)
-                ret = runner([siso_path] + new_args, env=env)
-                # --quiet suppresses siso's own success output which
-                # can confuse AI agents into thinking the build failed.
-                if detected_env_vars and subcmd == "ninja":
-                    # Agents seem to also sometimes not notice when the build
-                    # finishes. Try to help them.
-                    if ret == 0:
-                        print("The build has finished successfully.")
-                    else:
-                        print("The build has finished with an error.")
-                return ret
+                return runner([siso_path] + new_args, env=env)
         print(
             "depot_tools/siso.py: Could not find siso in third_party/siso "
             "of the current project. Did you run gclient sync?",

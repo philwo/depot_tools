@@ -1797,7 +1797,7 @@ def test_main_complex_args_e2e(
 )
 @pytest.mark.parametrize("subcmd", ["ninja", "query"])
 @pytest.mark.parametrize("exit_code", [0, 1])
-def test_ai_agent_env_prepends_flags(
+def test_ai_agent_env_only_tags_telemetry(
     env_var: Optional[str],
     subcmd: str,
     exit_code: int,
@@ -1825,21 +1825,11 @@ def test_ai_agent_env_prepends_flags(
     subcmd = args[1]
     subcmd_args = args[2:]
     stdout = mock_stdout.getvalue()
-    if env_var and subcmd == "ninja":
-        assert "--quiet" in subcmd_args
-        assert "--batch=false" in subcmd_args
-        assert "--namespace=developer:ai-agent" in subcmd_args
-        assert f"Detected AI agent env ({env_var})" in stdout
-        if exit_code == 0:
-            assert "finished successfully" in stdout
-        else:
-            assert "finished with an error" in stdout
-    else:
-        assert "--quiet" not in args
-        assert "--batch=false" not in args
-        assert "--namespace=developer:ai-agent" not in subcmd_args
-        assert "Detected AI agent env" not in stdout
-        assert "finished" not in stdout
+    for flag in ["--quiet", "--batch=false", "--heartbeat_period=30s"]:
+        assert flag not in args
+    assert stdout == ""
+    tagged = "--namespace=developer:ai-agent" in subcmd_args
+    assert tagged == bool(env_var and subcmd == "ninja")
 
 
 def test_apply_telemetry_flags_physical_gwindows(mocker: Any) -> None:
@@ -1885,33 +1875,6 @@ def test_apply_telemetry_flags_user_override_trace(mocker: Any) -> None:
     assert "--enable_cloud_logging" in got
     assert "--enable_cloud_monitoring" in got
     assert "--enable_cloud_profiler" in got
-
-
-def test_ai_agent_env_multiple_vars(
-    siso_project_setup: None,
-    tmp_path: Path,
-    mocker: Any,
-) -> None:
-    _get_sisoenv_path(tmp_path).write_text("")
-    siso_bin_path = _get_siso_bin_path(tmp_path)
-    mock_stdout = mocker.patch("sys.stdout", new_callable=io.StringIO)
-    runner = mocker.Mock(return_value=0)
-    cfg = create_telemetry_cfg(tmp_path, mocker, enabled=True)
-    env = {
-        "SISO_PATH": str(siso_bin_path),
-        "GEMINI_CLI": "1",
-        "AI_AGENT": "1",
-    }
-
-    siso.main(
-        ["siso.py", "ninja", "-C", "out/Default"],
-        telemetry_cfg=cfg,
-        env=env,
-        runner=runner,
-    )
-
-    stdout = mock_stdout.getvalue()
-    assert "Detected AI agent env (GEMINI_CLI, AI_AGENT)" in stdout
 
 
 # Stanza to have pytest be executed.
