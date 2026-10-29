@@ -442,6 +442,18 @@ class CookiesAuthenticatorTest(unittest.TestCase):
             ):
                 self.assertEqual(cookieAuth.debug_summary_state(), expected)
 
+    def testGitcookiesHostAuthenticatorIsApplicable(self):
+        a = gerrit_util.GitcookiesHostAuthenticator()
+        self.assertTrue(
+            a.is_applicable(gerrit_host="chromium-review.googlesource.com")
+        )
+        self.assertTrue(a.is_applicable(gerrit_host="some-review.example.com"))
+        self.assertFalse(
+            a.is_applicable(gerrit_host="gn-review.googlesource.com")
+        )
+        self.assertFalse(a.is_applicable(gerrit_host="another-key.example.org"))
+        self.assertFalse(a.is_applicable())
+
 
 class GceAuthenticatorTest(unittest.TestCase):
     def setUp(self):

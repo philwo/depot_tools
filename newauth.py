@@ -6,28 +6,21 @@
 from __future__ import annotations
 
 import os
-import sys
 
 import scm
 
 
 def Enabled() -> bool:
-    """Returns True if new auth stack is enabled."""
-    if not SwitchedOn():
-        return False
-    if _HasGitcookies():
-        _PrintGitcookiesWarning()
-        return False
-    return True
+    """Returns True if new auth stack is enabled.
+
+    A .gitcookies file doesn't disable it: hosts with credentials in it keep
+    using them through gerrit_util.GitcookiesHostAuthenticator.
+    """
+    return SwitchedOn()
 
 
 def SwitchedOn() -> bool:
-    """Returns True if new auth stack is "switched on".
-
-    Note that this does not necessarily mean that new auth is enabled.
-    In particular, we still disable new auth if a .gitcookies file is
-    present, to protect bots that haven't been migrated yet.
-    """
+    """Returns True if new auth stack is "switched on"."""
     if Default():
         return not ExplicitlyDisabled()
     return ExplicitlyEnabled()
@@ -36,32 +29,6 @@ def SwitchedOn() -> bool:
 def Default() -> bool:
     "Returns default enablement status for new auth stack."
     return True
-
-
-def _HasGitcookies() -> bool:
-    """Returns True if user has gitcookies file."""
-    return os.path.exists(os.path.expanduser("~/.gitcookies"))
-
-
-_warning_printed = False
-
-
-def _PrintGitcookiesWarning() -> None:
-    global _warning_printed
-    if _warning_printed:
-        return
-    _warning_printed = True
-    sys.stderr.write("""
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Warning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-depot_tools will soon stop using the .gitcookies file for authentication.
-
-To silence this warning, please run `git cl creds-check` which will help you fix this.
-
-If you encounter any issues, please report them using:
-https://issues.chromium.org/issues/new?component=1456702&template=2076315
---------------------------------------------------------------------------------
-
-""")
 
 
 def ExplicitlyEnabled() -> bool:

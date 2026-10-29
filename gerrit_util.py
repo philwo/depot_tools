@@ -337,6 +337,7 @@ class _Authenticator(object):
                         "_Authenticator.get: using chained authenticator"
                     )
                     a = [
+                        GitcookiesHostAuthenticator(),
                         SSOAuthenticator(),
                         # GCE detection can't distinguish cloud workstations.
                         GceAuthenticator(),
@@ -906,6 +907,16 @@ class CookiesAuthenticator(_Authenticator):
             return None
         username, domain = login[len("git-") :].split(".", 1)
         return "%s@%s" % (username, domain)
+
+
+class GitcookiesHostAuthenticator(CookiesAuthenticator):
+    """CookiesAuthenticator for the hosts that .gitcookies has credentials for.
+
+    Lets the new auth stack keep using .gitcookies for those hosts.
+    """
+
+    def is_applicable(self, *, gerrit_host: Optional[str] = None) -> bool:
+        return bool(gerrit_host and self._get_auth_for_host(gerrit_host))
 
 
 class GceAuthenticator(_Authenticator):
