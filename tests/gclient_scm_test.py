@@ -54,8 +54,10 @@ class BasicTests(unittest.TestCase):
         scm_mock.GIT(self)
         return super().setUp()
 
-    def testGetFirstRemoteUrl(self):
+    def testGetOriginUrl(self):
         FAKE_PATH = "/fake/path"
+        scm.GIT.SetConfig(FAKE_PATH, "remote.mirror.url", "other-remote")
+        scm.GIT.SetConfig(FAKE_PATH, "remote.origin.pushurl", "push-url")
         scm.GIT.SetConfig(
             FAKE_PATH, "remote.origin.url", "first-value", append=True
         )
@@ -64,9 +66,15 @@ class BasicTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            gclient_scm.SCMWrapper._get_first_remote_url(FAKE_PATH),
+            gclient_scm.SCMWrapper._get_origin_url(FAKE_PATH),
             "first-value",
         )
+
+    def testGetOriginUrlWithoutOrigin(self):
+        FAKE_PATH = "/fake/path"
+        scm.GIT.SetConfig(FAKE_PATH, "remote.mirror.url", "other-remote")
+
+        self.assertIsNone(gclient_scm.SCMWrapper._get_origin_url(FAKE_PATH))
 
     def testCanonicalGitUrl(self):
         # Endpoint form folds cosmetic spellings of one fetch URL, but keeps

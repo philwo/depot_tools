@@ -148,9 +148,9 @@ class SCMWrapper(object):
         return getattr(self, command)(options, args, file_list)
 
     @staticmethod
-    def _get_first_remote_url(checkout_path):
-        log = scm.GIT.YieldConfigRegexp(checkout_path, r"remote.*.url")
-        return next(log)[1]
+    def _get_origin_url(checkout_path):
+        urls = scm.GIT.GetConfigList(checkout_path, "remote.origin.url")
+        return urls[0] if urls else None
 
     def GetCacheMirror(self):
         if getattr(self, "cache_dir", None):
@@ -162,7 +162,9 @@ class SCMWrapper(object):
         """Attempt to determine the remote URL for this SCMWrapper."""
         # Git
         if os.path.exists(os.path.join(self.checkout_path, ".git")):
-            actual_remote_url = self._get_first_remote_url(self.checkout_path)
+            actual_remote_url = self._get_origin_url(self.checkout_path)
+            if not actual_remote_url:
+                return None
 
             mirror = self.GetCacheMirror()
             # If the cache is used, obtain the actual remote URL from there.
@@ -172,9 +174,7 @@ class SCMWrapper(object):
                 and mirror.mirror_path.replace("\\", "/")
                 == actual_remote_url.replace("\\", "/")
             ):
-                actual_remote_url = self._get_first_remote_url(
-                    mirror.mirror_path
-                )
+                actual_remote_url = self._get_origin_url(mirror.mirror_path)
             return actual_remote_url
         return None
 
